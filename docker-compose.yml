@@ -1,0 +1,46 @@
+﻿version: '3.9'
+services:
+  db:
+    image: postgres:15
+    container_name: krishiscan-db
+    environment:
+      POSTGRES_DB: krishiscan
+      POSTGRES_USER: krishiuser
+      POSTGRES_PASSWORD: krishipass
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: krishiscan-backend
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/krishiscan
+      SPRING_DATASOURCE_USERNAME: krishiuser
+      SPRING_DATASOURCE_PASSWORD: krishipass
+      AI_SERVICE_URL: http://ai-service:8000
+      JWT_SECRET: change-this-in-production
+    ports:
+      - '8080:8080'
+
+  ai-service:
+    build: ./ai-service
+    container_name: krishiscan-ai
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./ai-service/ml_models:/app/ml_models
+
+  frontend:
+    build: ./frontend
+    container_name: krishiscan-frontend
+    depends_on:
+      - backend
+    ports:
+      - '5173:5173'
+
+volumes:
+  pgdata:

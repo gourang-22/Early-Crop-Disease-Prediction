@@ -1,0 +1,14 @@
+{
+  "classes": [
+    "Beneficial",
+    "Harmful",
+    "Neutral"
+  ],
+  "num_classes": 3,
+  "best_accuracy": 92.01413427561837,
+  "class_types": {
+    "Beneficial": "beneficial",
+    "Harmful": "harmful",
+    "Neutral": "neutral"
+  }
+}
