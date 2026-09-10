@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-
-const API = 'http://localhost:8000'
+import { API } from '../services/api'
 
 const LANGUAGE_NAMES = {
   'en-IN': 'English',

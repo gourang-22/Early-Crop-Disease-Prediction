@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-
-const API = 'http://localhost:8000'
+import { API } from '../services/api'
 
 export default function DiseaseScanPage() {
   const { activeFarm } = useAuth()

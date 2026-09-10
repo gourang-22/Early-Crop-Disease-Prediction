@@ -1,6 +1,5 @@
 import { useState } from 'react'
-
-const API = 'http://localhost:8000'
+import { API } from '../services/api'
 
 function ConfidenceBar({ value }) {
   const pct = Math.round(value * 100)

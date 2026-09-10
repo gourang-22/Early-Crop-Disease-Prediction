@@ -1,8 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState } from 'react'
-
-const API = 'http://localhost:8000'
+import { API } from '../services/api'
 
 export default function DiagnosisResultPage() {
   const location = useLocation()

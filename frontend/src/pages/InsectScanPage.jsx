@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { API } from '../services/api'
 
 const INSECT_INFO = {
   Beneficial: {
@@ -63,7 +64,7 @@ export default function InsectScanPage() {
       const formData = new FormData()
       formData.append('file', image)
 
-      const res = await fetch('http://localhost:8000/predict/insect', {
+      const res = await fetch(`${API}/predict/insect`, {
         method: 'POST',
         body: formData,
       })
@@ -72,7 +73,7 @@ export default function InsectScanPage() {
       const data = await res.json()
       setResult(data)
     } catch (err) {
-      setError('Detection failed. Make sure AI service is running on port 8000.')
+      setError('Detection failed. Make sure the AI backend service is running and accessible.')
     } finally {
       setLoading(false)
     }

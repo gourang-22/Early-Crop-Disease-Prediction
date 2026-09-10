@@ -338,9 +338,61 @@ npm run dev
 ### Frontend (`frontend/.env`)
 | Variable | Required | Description | Where to Get |
 |----------|----------|-------------|-------------|
+| `VITE_API_URL` | ⚪ Optional (defaults to `http://localhost:8000`) | URL of the backend AI service (e.g. `https://krishiscan-api.onrender.com`) | Render backend service URL |
 | `VITE_GROQ_API_KEY` | ⚪ Optional | Voice-to-text transcription via Groq Whisper | [console.groq.com](https://console.groq.com) |
 
 All other APIs (Open-Meteo, OpenStreetMap) are free and require no keys.
+
+---
+
+## 🌐 Deploy on Render
+
+KrishiScan can be deployed to [Render](https://render.com) using the included `render.yaml` Blueprint or manually.
+
+### Option A: 1-Click Blueprint (Recommended)
+1. Push this repository to your GitHub account.
+2. Go to the [Render Dashboard](https://dashboard.render.com/) and click **New +** → **Blueprint**.
+3. Select your `Early-Crop-Disease-Prediction` repository.
+4. Render will detect `render.yaml` and configure both services:
+   - **`krishiscan-api`**: Python Web Service (FastAPI)
+   - **`krishiscan-frontend`**: Static Site (React + Vite)
+5. Fill in the environment variable:
+   - `GEMINI_API_KEY`: Your key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+6. Click **Apply**. Render will build and deploy both services!
+
+### Option B: Manual Setup
+
+#### 1. Backend Service (FastAPI)
+- Click **New +** → **Web Service**
+- Connect your GitHub repository
+- **Root Directory**: `ai-service`
+- **Runtime**: `Python`
+- **Build Command**:
+  ```bash
+  pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt
+  ```
+- **Start Command**:
+  ```bash
+  uvicorn app.main:app --host 0.0.0.0 --port $PORT
+  ```
+- **Environment Variables**:
+  - `GEMINI_API_KEY`: `your_gemini_api_key_here`
+  - `DEMO_MODE`: `false`
+- Note your deployed backend URL (e.g., `https://krishiscan-api.onrender.com`).
+
+#### 2. Frontend Service (React SPA)
+- Click **New +** → **Static Site**
+- Connect your GitHub repository
+- **Root Directory**: `frontend`
+- **Build Command**: `npm install && npm run build`
+- **Publish Directory**: `dist`
+- **Environment Variables**:
+  - `VITE_API_URL`: `https://your-backend-api.onrender.com`
+- **Redirects / Rewrites**:
+  - Under **Redirects/Rewrites**, add:
+    - **Source**: `/*`
+    - **Destination**: `/index.html`
+    - **Action**: `Rewrite`
 
 ---
 

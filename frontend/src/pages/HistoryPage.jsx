@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-
-const API = 'http://localhost:8000'
+import { API } from '../services/api'
 
 export default function HistoryPage() {
   const [cases, setCases] = useState([])

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { API } from '../services/api'
 
 export default function ScanPage() {
   const [image, setImage] = useState(null)
@@ -31,7 +32,7 @@ export default function ScanPage() {
       const formData = new FormData()
       formData.append('file', image)
 
-      const res = await fetch('http://localhost:8000/predict/soil', {
+      const res = await fetch(`${API}/predict/soil`, {
         method: 'POST',
         body: formData,
       })
@@ -43,7 +44,7 @@ export default function ScanPage() {
       sessionStorage.setItem('lastScan', JSON.stringify(data))
       navigate('/result/latest')
     } catch (err) {
-      setError('Scan failed. Make sure AI service is running on port 8000.')
+      setError('Scan failed. Make sure the AI backend service is running and accessible.')
     } finally {
       setLoading(false)
     }

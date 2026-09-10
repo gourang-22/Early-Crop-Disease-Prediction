@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import ValidationModal from '../components/ValidationModal'
+import { API } from '../services/api'
 
 // Fix for default marker icon in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl
@@ -11,8 +12,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 })
-
-const API = 'http://localhost:8000'
 
 function StatBadge({ label, value, color }) {
   const colors = {
