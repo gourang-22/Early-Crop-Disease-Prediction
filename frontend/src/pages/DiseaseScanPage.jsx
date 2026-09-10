@@ -32,6 +32,9 @@ export default function DiseaseScanPage() {
 
     const formData = new FormData()
     formData.append('file', image)
+    if (activeFarm?.crop) formData.append('crop', activeFarm.crop)
+    if (activeFarm?.district) formData.append('district', activeFarm.district)
+    if (activeFarm?.growth_stage) formData.append('growth_stage', activeFarm.growth_stage)
 
     try {
       const response = await fetch(`${API}/predict/disease`, {
@@ -77,7 +80,7 @@ export default function DiseaseScanPage() {
 
         {/* Tips */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-xs font-bold text-blue-700 mb-2">📸 Photo Tips for Best Accuracy</p>
+          <p className="text-xs font-bold text-blue-700 mb-2">📸 Photo Tips for Best Assessment</p>
           <ul className="text-xs text-blue-600 space-y-1 list-disc list-inside">
             <li>Focus on a single affected leaf in good natural light</li>
             <li>Keep the photo sharp — avoid blurry or dark images</li>
@@ -178,7 +181,7 @@ export default function DiseaseScanPage() {
         <div className="grid grid-cols-3 gap-4">
           {[
             { step: '1', icon: '📸', title: 'Upload', desc: 'Take a clear photo of affected plant parts' },
-            { step: '2', icon: '🧠', title: 'AI Scan', desc: 'Our model identifies the disease with confidence score' },
+            { step: '2', icon: '🧠', title: 'AI Scan', desc: 'AI analyzes symptoms and provides an assessment confidence' },
             { step: '3', icon: '💊', title: 'Guidance', desc: 'Get management recommendations or escalate to expert' },
           ].map(s => (
             <div key={s.step} className="text-center">

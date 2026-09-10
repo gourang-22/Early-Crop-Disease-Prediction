@@ -70,7 +70,7 @@ class InsectClassifier:
             torch.load(MODEL_PATH, map_location='cpu')
         )
         self.model.eval()
-        print(f"[InsectClassifier] ✅ Real model loaded! {len(self.classes)} classes")
+        print(f"[InsectClassifier] [OK] Real model loaded! {len(self.classes)} classes")
 
     def predict(self, image: Image.Image):
         if self.mock:

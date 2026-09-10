@@ -57,7 +57,7 @@ class SoilClassifier:
             torch.load(MODEL_PATH, map_location='cpu')
         )
         self.model.eval()
-        print(f"[SoilClassifier] ✅ Real model loaded! {len(self.classes)} classes")
+        print(f"[SoilClassifier] [OK] Real model loaded! {len(self.classes)} classes")
 
     def predict(self, image: Image.Image):
         if self.mock:

@@ -55,7 +55,7 @@ function CaseRow({ c, onClick }) {
         <div className="flex items-center gap-2">
           <span className={`font-semibold ${riskCls}`}>{c.risk_level}</span>
           <span className="text-charcoal-300">·</span>
-          <span>{conf}% conf.</span>
+          <span>{conf}% assessment</span>
         </div>
       </div>
     </div>
@@ -177,7 +177,7 @@ export default function OfficerDashboard() {
                     <strong>Case #{c.id}</strong><br />
                     Disease: {c.disease}<br />
                     Status: {c.status}<br />
-                    Confidence: {Math.round(c.confidence * 100)}%
+                    AI Assessment Confidence: {Math.round(c.confidence * 100)}%
                   </Popup>
                 </Marker>
               ))}

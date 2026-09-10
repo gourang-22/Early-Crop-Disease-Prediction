@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY
+const API = 'http://localhost:8000'
 
 const LANGUAGE_NAMES = {
   'en-IN': 'English',
@@ -22,34 +22,22 @@ const LANGUAGES = [
   { code: 'kn-IN', label: 'ಕ' },
 ]
 
-const getSystemPrompt = (lang, context, farm) => {
-  const farmContext = farm
-    ? `The farmer is growing ${farm.crop}${farm.crop_variety ? ` (${farm.crop_variety})` : ''} in ${farm.district}, ${farm.state}. Growth stage: ${farm.growth_stage}.`
-    : ''
-  const diseaseContext = context
-    ? `They recently scanned a plant and detected "${context.disease}". Provide integrated pest management guidance based on this.`
-    : ''
-  return `You are KrishiBot, a friendly and knowledgeable crop health assistant for Indian farmers.
-IMPORTANT: Respond ONLY in ${LANGUAGE_NAMES[lang]} language. Every word must be in ${LANGUAGE_NAMES[lang]}.
-Be concise — 2-4 sentences max. Be practical and specific to Indian agriculture.
-Topics: crop diseases, soil, fertilizers, pest control, irrigation, weather, crop varieties, storage, market prices.
-${farmContext} ${diseaseContext}
-If asked about topics outside agriculture, politely redirect the conversation.`
-}
-
 export default function AssistantPage() {
   const locationState = useLocation().state
   const { activeFarm, user } = useAuth()
 
   const getDiseaseContext = () => {
-    if (locationState?.disease) return locationState
+    if (locationState?.disease || locationState?.plant_identified) return locationState
     return null
   }
   const diseaseCtx = getDiseaseContext()
 
   const getInitialMessage = () => {
     if (diseaseCtx) {
-      return `Namaste! 🌱 I see you detected **${diseaseCtx.disease}** on your **${diseaseCtx.crop || activeFarm?.crop || 'crop'}**. I'll provide integrated pest management guidance. What would you like to know?`
+      if (diseaseCtx.crop_match === false && diseaseCtx.plant_identified) {
+        return `Namaste! 🌱 I see you uploaded an image identified as **${diseaseCtx.plant_identified}** (while your registered farm crop is **${diseaseCtx.expected_crop || activeFarm?.crop}**), showing signs of **${diseaseCtx.disease || 'an issue'}**. I'm here to provide advice for this plant. What would you like to ask?`
+      }
+      return `Namaste! 🌱 I see you detected **${diseaseCtx.disease}** on your **${diseaseCtx.plant_identified || diseaseCtx.crop || activeFarm?.crop || 'crop'}**. I'll provide integrated pest management guidance. What would you like to know?`
     }
     return `Namaste ${user?.name?.split(' ')[0] || ''}! 🌱 I'm KrishiBot, your crop health assistant. Ask me anything about your farm — diseases, fertilizers, weather, or pest control. You can also speak to me using the mic!`
   }
@@ -61,8 +49,7 @@ export default function AssistantPage() {
   const [speaking, setSpeaking] = useState(false)
   const [language, setLanguage] = useState(user?.language || 'en-IN')
   const bottomRef = useRef()
-  const mediaRecorderRef = useRef()
-  const chunksRef = useRef([])
+  const recognitionRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -84,89 +71,136 @@ export default function AssistantPage() {
 
   function stopSpeaking() { window.speechSynthesis.cancel(); setSpeaking(false) }
 
-  async function askGroq(userText) {
-    const userMessage = { role: 'user', content: userText }
-    setMessages(prev => [...prev, userMessage])
+  async function sendMessage(userText) {
+    if (!userText?.trim() || loading) return
+
+    const userMessage = { role: 'user', content: userText.trim() }
+    const updatedMessages = [...messages, userMessage]
+    setMessages(updatedMessages)
+    setInput('')
     setLoading(true)
+
     try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const response = await fetch(`${API}/assistant/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: getSystemPrompt(language, diseaseCtx, activeFarm) },
-            ...messages,
-            userMessage,
-          ],
-          max_tokens: 300,
-          temperature: 0.7,
+          message: userText.trim(),
+          language: language,
+          crop: diseaseCtx?.plant_identified || activeFarm?.crop,
+          crop_variety: activeFarm?.crop_variety,
+          growth_stage: activeFarm?.growth_stage,
+          district: activeFarm?.district,
+          state: activeFarm?.state,
+          disease_context: diseaseCtx?.disease,
+          plant_identified: diseaseCtx?.plant_identified,
+          expected_crop: diseaseCtx?.expected_crop || activeFarm?.crop,
+          crop_match: diseaseCtx?.crop_match,
+          confidence: diseaseCtx?.confidence,
+          risk_level: diseaseCtx?.risk_level,
+          messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
         }),
       })
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`)
+      }
+
       const data = await response.json()
-      const reply = data.choices?.[0]?.message?.content || 'Sorry, I could not get a response.'
+      const reply = data.reply || 'Sorry, I could not get a response.'
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])
       speak(reply)
-    } catch {
-      const err = 'Sorry, something went wrong. Please check your API connection.'
-      setMessages(prev => [...prev, { role: 'assistant', content: err }])
+    } catch (err) {
+      console.error('Assistant request failed:', err)
+      const errReply = 'Sorry, something went wrong. Please check that the AI service is running on port 8000.'
+      setMessages(prev => [...prev, { role: 'assistant', content: errReply }])
     } finally {
       setLoading(false)
     }
   }
 
-  async function transcribeAudio(audioBlob) {
-    const formData = new FormData()
-    formData.append('file', audioBlob, 'recording.webm')
-    formData.append('model', 'whisper-large-v3')
-    formData.append('language', language.split('-')[0])
-    const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
-      body: formData,
-    })
-    const data = await response.json()
-    return data.text || ''
-  }
-
-  async function startRecording() {
-    chunksRef.current = []
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    const recorder = new MediaRecorder(stream)
-    mediaRecorderRef.current = recorder
-    recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
-    recorder.onstop = async () => {
-      stream.getTracks().forEach(t => t.stop())
-      const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
-      setLoading(true)
-      try {
-        const text = await transcribeAudio(blob)
-        if (text.trim()) await askGroq(text.trim())
-        else setLoading(false)
-      } catch { setLoading(false) }
+  function startListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser. Please use Chrome/Edge or type your message.')
+      return
     }
-    recorder.start()
-    setRecording(true)
+
+    try {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort()
+      }
+
+      const recognition = new SpeechRecognition()
+      recognition.lang = language
+      recognition.continuous = false
+      recognition.interimResults = false
+
+      recognition.onstart = () => {
+        setRecording(true)
+      }
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript
+        if (transcript && transcript.trim()) {
+          sendMessage(transcript.trim())
+        }
+      }
+
+      recognition.onerror = (event) => {
+        console.warn('Speech recognition error:', event.error)
+        setRecording(false)
+      }
+
+      recognition.onend = () => {
+        setRecording(false)
+      }
+
+      recognitionRef.current = recognition
+      recognition.start()
+    } catch (e) {
+      console.error('Failed to start speech recognition:', e)
+      setRecording(false)
+    }
   }
 
-  function stopRecording() { mediaRecorderRef.current?.stop(); setRecording(false) }
+  function stopListening() {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop()
+      } catch {
+        // ignore if already stopped
+      }
+    }
+    setRecording(false)
+  }
+
+  function toggleListening() {
+    if (recording) {
+      stopListening()
+    } else {
+      startListening()
+    }
+  }
 
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      if (input.trim()) { askGroq(input.trim()); setInput('') }
+      if (input.trim()) {
+        sendMessage(input.trim())
+      }
     }
   }
 
+  const plantName = diseaseCtx?.plant_identified || diseaseCtx?.crop || activeFarm?.crop || 'crop'
   const SUGGESTIONS = diseaseCtx
     ? [
-        `What are the symptoms of ${diseaseCtx.disease}?`,
-        `Best fungicide for ${diseaseCtx.disease}?`,
-        `How to prevent ${diseaseCtx.disease} from spreading?`,
-        `Organic treatment options?`,
+        `What are symptoms of ${diseaseCtx.disease || 'this condition'} in ${plantName}?`,
+        `Recommended fungicide or organic control for ${diseaseCtx.disease || 'this'}?`,
+        `How quickly can this spread to other plants?`,
+        `Can I prevent this organically?`,
       ]
     : [
         'Best fertilizer for tomato flowering stage?',
@@ -183,7 +217,7 @@ export default function AssistantPage() {
           <div className="w-11 h-11 rounded-xl bg-forest-700 flex items-center justify-center text-2xl shadow-md">🤖</div>
           <div>
             <h1 className="text-lg font-bold text-charcoal-800">Crop Health Assistant</h1>
-            <p className="text-xs text-charcoal-400">Powered by Groq LLaMA · Multilingual Voice Support</p>
+            <p className="text-xs text-charcoal-400">Powered by Google Gemini · Multilingual Voice Support</p>
           </div>
         </div>
         <span className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 border border-green-200 px-3 py-1 rounded-full font-medium">
@@ -197,17 +231,20 @@ export default function AssistantPage() {
         <div className="bg-forest-50 border border-forest-200 rounded-xl px-4 py-3 flex items-center gap-3">
           <span className="text-lg">🌾</span>
           <div className="min-w-0">
-            {diseaseCtx && (
-              <p className="text-xs font-bold text-forest-800">
-                Context: {diseaseCtx.disease} detected on {diseaseCtx.crop || activeFarm?.crop}
+            {diseaseCtx?.crop_match === false && diseaseCtx.plant_identified ? (
+              <p className="text-xs font-bold text-amber-900">
+                Context: {diseaseCtx.plant_identified} (Expected farm crop: {diseaseCtx.expected_crop || activeFarm?.crop}) · {diseaseCtx.disease || 'Health Inquiry'}
               </p>
-            )}
-            {activeFarm && !diseaseCtx && (
+            ) : diseaseCtx ? (
+              <p className="text-xs font-bold text-forest-800">
+                Context: {diseaseCtx.disease} on {diseaseCtx.plant_identified || diseaseCtx.crop || activeFarm?.crop}
+              </p>
+            ) : activeFarm ? (
               <p className="text-xs font-bold text-forest-800">
                 Farm: {activeFarm.name} · {activeFarm.crop} · {activeFarm.growth_stage}
               </p>
-            )}
-            <p className="text-[10px] text-forest-600 mt-0.5">AI responses are tailored to your farm context</p>
+            ) : null}
+            <p className="text-[10px] text-forest-600 mt-0.5">AI responses are tailored to your farm and plant context</p>
           </div>
         </div>
       )}
@@ -309,12 +346,9 @@ export default function AssistantPage() {
             className="flex-1 resize-none bg-earth-50 border border-earth-200 rounded-xl px-4 py-2.5 text-sm text-charcoal-800 placeholder-charcoal-300 focus:outline-none focus:border-forest-400 focus:bg-white transition"
           />
           <button
-            onMouseDown={startRecording}
-            onMouseUp={stopRecording}
-            onTouchStart={startRecording}
-            onTouchEnd={stopRecording}
+            onClick={toggleListening}
             disabled={loading}
-            title="Hold to speak"
+            title={recording ? 'Click to stop listening' : 'Click to speak'}
             className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition ${
               recording ? 'bg-red-500 text-white animate-pulse' : 'bg-earth-100 text-charcoal-600 hover:bg-earth-200'
             }`}
@@ -322,7 +356,7 @@ export default function AssistantPage() {
             {recording ? '⏹' : '🎙️'}
           </button>
           <button
-            onClick={() => { if (input.trim()) { askGroq(input.trim()); setInput('') } }}
+            onClick={() => { if (input.trim()) { sendMessage(input.trim()) } }}
             disabled={!input.trim() || loading}
             className="h-10 px-5 bg-forest-700 text-white rounded-xl text-sm font-semibold hover:bg-forest-600 disabled:opacity-40 transition flex-shrink-0"
           >
@@ -332,7 +366,7 @@ export default function AssistantPage() {
       </div>
 
       <p className="text-xs text-charcoal-400 text-center">
-        🎙️ Hold mic to speak · 🔊 Tap Read aloud · Responds in {LANGUAGE_NAMES[language]}
+        🎙️ Tap mic to speak · 🔊 Tap Read aloud · Responds in {LANGUAGE_NAMES[language]}
       </p>
     </div>
   )

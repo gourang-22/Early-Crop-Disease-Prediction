@@ -9,7 +9,7 @@ function ConfidenceBar({ value }) {
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <span className="text-xs text-charcoal-400">AI Confidence</span>
+        <span className="text-xs text-charcoal-400">AI Assessment Confidence</span>
         <span className={`text-sm font-bold ${color}`}>{pct}%</span>
       </div>
       <div className="risk-bar-wrap"><div className={`risk-bar ${cls}`} style={{ width: `${pct}%` }} /></div>
