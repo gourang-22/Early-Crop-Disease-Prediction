@@ -7,6 +7,7 @@ Built for **Smart India Hackathon 2026** · Problem Statement: Early Crop Diseas
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Gemini](https://img.shields.io/badge/Google-Gemini%202.5-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://aistudio.google.com/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-EfficientNet-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![Groq](https://img.shields.io/badge/Groq-LLaMA%203.3-F55036?style=for-the-badge)](https://groq.com/)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
@@ -121,7 +122,8 @@ KrishiScan is a full-stack, SaaS-style crop health intelligence platform that en
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
 │                    EXTERNAL APIS                             │
-│  Groq LLaMA 3.3 (chat) · Groq Whisper (voice transcription) │
+│  Google Gemini 2.5 Flash (vision diagnosis & assistant)     │
+│  Groq LLaMA 3.3 · Groq Whisper (voice transcription)        │
 │  Open-Meteo (weather) · OpenStreetMap (geospatial map)      │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -136,9 +138,9 @@ KrishiScan is a full-stack, SaaS-style crop health intelligence platform that en
 | **Routing** | React Router v6 | Protected routes, role-based nav |
 | **AI Service** | FastAPI, Python 3.11+ | REST API + ML inference |
 | **ML Models** | PyTorch, EfficientNet-B0 | Disease, soil, insect classification |
+| **Multimodal AI** | Google Gemini 2.5 Flash | Multimodal crop vision analysis & KrishiBot assistant |
 | **Database** | SQLite + SQLAlchemy ORM | Persistent storage, auto-seeded |
-| **AI Chat** | Groq LLaMA 3.3 70B | Multilingual farming assistant |
-| **Voice** | Groq Whisper Large v3 | Voice-to-text in 6 Indian languages |
+| **AI Chat & Voice** | Groq LLaMA 3.3 / Whisper Large v3 | Voice-to-text & backup chat in 6 Indian languages |
 | **Weather** | Open-Meteo API | Free, no API key required |
 | **Map** | React-Leaflet + OpenStreetMap | Disease hotspot visualization |
 | **Fonts** | Google Fonts — Inter | Clean, professional typography |
@@ -280,6 +282,13 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Configure environment variables
+# Copy .env.example to .env and add your Gemini API key from https://aistudio.google.com/app/apikey
+# Windows:
+copy .env.example .env
+# Mac/Linux:
+# cp .env.example .env
+
 # Start the server
 uvicorn app.main:app --reload --port 8000
 ```
@@ -302,7 +311,7 @@ cd frontend
 npm install
 ```
 
-Create `frontend/.env`:
+Create `frontend/.env` (optional, for Groq Whisper voice chat):
 
 ```env
 VITE_GROQ_API_KEY=your_groq_api_key_here
@@ -320,9 +329,16 @@ npm run dev
 
 ## ⚙️ Environment Variables
 
-| Variable | Required | Where to Get |
-|----------|----------|-------------|
-| `VITE_GROQ_API_KEY` | ✅ Required | [console.groq.com](https://console.groq.com) — free tier available |
+### AI Service (`ai-service/.env`)
+| Variable | Required | Description | Where to Get |
+|----------|----------|-------------|-------------|
+| `GEMINI_API_KEY` | ✅ Recommended | Powers multimodal disease diagnosis & KrishiBot assistant | [Google AI Studio](https://aistudio.google.com/app/apikey) |
+| `DEMO_MODE` | ⚪ Optional (`false`/`true`) | Set to `true` to run simulation mode without external API calls | Local setting |
+
+### Frontend (`frontend/.env`)
+| Variable | Required | Description | Where to Get |
+|----------|----------|-------------|-------------|
+| `VITE_GROQ_API_KEY` | ⚪ Optional | Voice-to-text transcription via Groq Whisper | [console.groq.com](https://console.groq.com) |
 
 All other APIs (Open-Meteo, OpenStreetMap) are free and require no keys.
 
