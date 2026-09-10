@@ -7,15 +7,17 @@ export default function PageLoader({ children }) {
   const location = useLocation()
 
   useEffect(() => {
+    setDisplayChildren(children)
     setLoading(true)
-    const t1 = setTimeout(() => {
-      setDisplayChildren(children)
-    }, 1000)
-    const t2 = setTimeout(() => {
+    const t = setTimeout(() => {
       setLoading(false)
     }, 1400)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    return () => clearTimeout(t)
   }, [location.pathname])
+
+  useEffect(() => {
+    setDisplayChildren(children)
+  }, [children])
 
   return (
     <>

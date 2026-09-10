@@ -13,10 +13,12 @@ export default function DiagnosisResultPage() {
 
   const { result, farm, imagePreview } = location.state || {}
 
-  // If no result in state, redirect back to scanner
+  // If no result in state and we are on this route, redirect back to scanner
   useEffect(() => {
-    if (!result) navigate('/disease', { replace: true })
-  }, [result, navigate])
+    if (location.pathname === '/disease/result' && !result) {
+      navigate('/disease', { replace: true })
+    }
+  }, [result, navigate, location.pathname])
 
   if (!result) return null
 
@@ -268,6 +270,7 @@ export default function DiagnosisResultPage() {
         <div className="pt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Button 1: Discuss with KrishiBot */}
           <button
+            type="button"
             onClick={handleDiscussWithBot}
             className="bg-forest-800 hover:bg-forest-700 text-white rounded-xl p-3.5 flex items-center gap-3 transition shadow-sm text-left group"
           >
