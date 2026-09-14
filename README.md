@@ -114,9 +114,9 @@ KrishiScan is a full-stack, SaaS-style crop health intelligence platform that en
 │  └───────────────────────────────────────────────────────┘  │
 │                                                             │
 │  ┌────────────────────┐   ┌─────────────────────────────┐   │
-│  │   EfficientNet-B0  │   │   EfficientNet-B0           │   │
-│  │   Disease Model    │   │   Soil / Insect Classifier  │   │
-│  │   (91% accuracy)   │   │   (97%+ accuracy)           │   │
+│  │   Gemini 2.5 Flash │   │   EfficientNet-B0           │   │
+│  │   Disease Vision   │   │   Soil / Insect Classifier  │   │
+│  │   (Multimodal AI)  │   │   (97%+ accuracy)           │   │
 │  └────────────────────┘   └─────────────────────────────┘   │
 └──────────────────────────┬──────────────────────────────────┘
                            │
@@ -229,8 +229,8 @@ krishiscan/
 │   │   │   └── insect.py         # /predict/insect
 │   │   └── schemas/
 │   ├── ml_models/
-│   │   ├── soil_classes.json
-│   │   └── insect_classes.json
+│   │   ├── soil_classes.json      # Soil type class labels
+│   │   ├── insect_classes.json    # Insect class labels
 │   │   # ⚠️ .pt model weights: download separately (see below)
 │   └── requirements.txt
 │
@@ -261,9 +261,10 @@ cd Early-Crop-Disease-Prediction
 
 ```
 ai-service/ml_models/soil_classifier.pt       # Soil type classifier
-ai-service/ml_models/insect_classifier.pt     # Insect classifier
-ai-service/ml_models/disease_classifier.pt    # Crop disease classifier
+ai-service/ml_models/insect_classifier.pt     # Insect/pest classifier
 ```
+
+> **Note:** Disease detection uses **Google Gemini 2.5 Flash** multimodal AI (no local `.pt` file needed). Just set your `GEMINI_API_KEY` in Step 3.
 
 ### Step 3 — Set Up the AI Service (Backend)
 
@@ -441,7 +442,7 @@ All models use **EfficientNet-B0** fine-tuned on agricultural datasets.
 
 | Model | Classes | Accuracy | Input |
 |-------|---------|----------|-------|
-| **Disease Classifier** | 38 plant diseases (PlantVillage) | ~91% | Leaf image |
+| **Disease Detector** | Any plant disease (via Gemini multimodal AI) | Gemini 2.5 Flash | Leaf image |
 | **Soil Classifier** | Alluvial, Arid, Black, Laterite, Mountain, Red, Yellow | 97.16% | Soil image |
 | **Insect Classifier** | Beneficial, Harmful, Neutral | ~90%+ | Insect image |
 
