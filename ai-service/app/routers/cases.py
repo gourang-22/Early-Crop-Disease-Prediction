@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db, Case
 from pydantic import BaseModel
 from typing import List, Optional
+import datetime
 
 router = APIRouter()
 
@@ -25,9 +26,10 @@ class CaseResponse(BaseModel):
     risk_level: str
     status: str
     image_url: Optional[str] = None
+    created_at: Optional[datetime.datetime] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 @router.get("/", response_model=List[CaseResponse])
 def get_cases(db: Session = Depends(get_db)):
@@ -55,10 +57,8 @@ def validate_case(case_id: int, status: str, db: Session = Depends(get_db)):
     db_case = db.query(Case).filter(Case.id == case_id).first()
     if not db_case:
         raise HTTPException(status_code=404, detail="Case not found")
-
     if status not in ["Confirmed", "Rejected"]:
         raise HTTPException(status_code=400, detail="Invalid status")
-
     db_case.status = status
     db.commit()
     db.refresh(db_case)

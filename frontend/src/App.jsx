@@ -19,9 +19,13 @@ import DiagnosisResultPage from './pages/DiagnosisResultPage'
 import AlertsPage from './pages/AlertsPage'
 import AssistantPage from './pages/AssistantPage'
 import HistoryPage from './pages/HistoryPage'
+import ProfilePage from './pages/ProfilePage'
 
 // Officer pages (with shell)
 import OfficerDashboard from './pages/OfficerDashboard'
+
+// 404
+import NotFoundPage from './pages/NotFoundPage'
 
 /** Requires the user to be logged in; redirects to /login otherwise */
 function ProtectedRoute({ children, officerOnly = false }) {
@@ -80,21 +84,22 @@ function App() {
       />
 
       {/* Farmer routes */}
-      <Route path="/dashboard" element={<ShellRoute><DashboardPage /></ShellRoute>} />
-      <Route path="/farms" element={<ShellRoute><FarmsPage /></ShellRoute>} />
-      <Route path="/health" element={<ShellRoute><CropHealthPage /></ShellRoute>} />
-      <Route path="/disease" element={<ShellRoute><DiseaseScanPage /></ShellRoute>} />
+      <Route path="/dashboard"      element={<ShellRoute><DashboardPage /></ShellRoute>} />
+      <Route path="/farms"          element={<ShellRoute><FarmsPage /></ShellRoute>} />
+      <Route path="/health"         element={<ShellRoute><CropHealthPage /></ShellRoute>} />
+      <Route path="/disease"        element={<ShellRoute><DiseaseScanPage /></ShellRoute>} />
       <Route path="/disease/result" element={<ShellRoute><DiagnosisResultPage /></ShellRoute>} />
-      <Route path="/alerts" element={<ShellRoute><AlertsPage /></ShellRoute>} />
-      <Route path="/assistant" element={<ShellRoute><AssistantPage /></ShellRoute>} />
-      <Route path="/history" element={<ShellRoute><HistoryPage /></ShellRoute>} />
+      <Route path="/alerts"         element={<ShellRoute><AlertsPage /></ShellRoute>} />
+      <Route path="/assistant"      element={<ShellRoute><AssistantPage /></ShellRoute>} />
+      <Route path="/history"        element={<ShellRoute><HistoryPage /></ShellRoute>} />
+      <Route path="/profile"        element={<ShellRoute><ProfilePage /></ShellRoute>} />
 
-      {/* Officer route */}
-      <Route path="/officer" element={<ShellRoute officerOnly={false}><OfficerDashboard /></ShellRoute>} />
+      {/* Officer route — officer only (bug fix) */}
+      <Route path="/officer" element={<ShellRoute officerOnly={true}><OfficerDashboard /></ShellRoute>} />
 
       {/* Legacy redirects */}
-      <Route path="/chat" element={<Navigate to="/assistant" replace />} />
-      <Route path="/scan" element={<Navigate to="/disease" replace />} />
+      <Route path="/chat"    element={<Navigate to="/assistant" replace />} />
+      <Route path="/scan"    element={<Navigate to="/disease" replace />} />
       <Route path="/weather" element={<Navigate to="/health" replace />} />
 
       {/* Default redirects */}
@@ -106,7 +111,9 @@ function App() {
             : <Navigate to="/login" replace />
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+
+      {/* 404 catch-all */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

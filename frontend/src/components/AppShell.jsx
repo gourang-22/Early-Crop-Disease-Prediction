@@ -1,14 +1,15 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useWeather } from '../context/WeatherContext'
 
 const NAV_FARMER = [
   { to: '/dashboard', icon: '⊞', label: 'Dashboard' },
-  { to: '/farms', icon: '🌾', label: 'My Farms' },
-  { to: '/health', icon: '📊', label: 'Crop Health' },
-  { to: '/disease', icon: '🔬', label: 'Disease Scanner' },
-  { to: '/alerts', icon: '🔔', label: 'Alerts' },
+  { to: '/farms',     icon: '🌾', label: 'My Farms' },
+  { to: '/health',    icon: '📊', label: 'Crop Health' },
+  { to: '/disease',   icon: '🔬', label: 'Disease Scanner' },
+  { to: '/alerts',    icon: '🔔', label: 'Alerts' },
   { to: '/assistant', icon: '🤖', label: 'AI Assistant' },
-  { to: '/history', icon: '📋', label: 'Case History' },
+  { to: '/history',   icon: '📋', label: 'Case History' },
 ]
 
 function SidebarLogo() {
@@ -46,18 +47,41 @@ function SidebarNav({ links }) {
 
 function UserFooter({ user, logout }) {
   const navigate = useNavigate()
+  const { weatherData } = useWeather()
 
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
 
+  const riskLevel = weatherData?.overall_risk_level?.toLowerCase()
+  const pillClass = riskLevel === 'high' ? 'weather-pill-high'
+    : riskLevel === 'medium' ? 'weather-pill-medium'
+    : riskLevel === 'low' ? 'weather-pill-low'
+    : null
+
+  const initials = user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'U'
+
   return (
-    <div className="border-t border-white/5 p-3">
-      <div className="flex items-center gap-3 px-2 py-2">
-        <div className="w-8 h-8 rounded-full bg-forest-600 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-          {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+    <div className="border-t border-white/5 p-3 space-y-2">
+      {/* Weather risk pill */}
+      {weatherData && pillClass && (
+        <div className="px-2">
+          <span className={`weather-pill ${pillClass} w-full justify-center`}>
+            🌤️ {weatherData.overall_risk}% Disease Risk · {weatherData.city || 'Live'}
+          </span>
         </div>
+      )}
+
+      {/* Profile + Logout */}
+      <div className="flex items-center gap-3 px-2 py-2">
+        <Link
+          to="/profile"
+          className="w-8 h-8 rounded-full avatar-gradient flex items-center justify-center text-xs font-bold text-white flex-shrink-0 hover:scale-105 transition"
+          title="View Profile"
+        >
+          {initials}
+        </Link>
         <div className="flex-1 min-w-0">
           <p className="text-white/90 text-xs font-semibold truncate">{user?.name}</p>
           <p className="text-white/40 text-[10px] truncate">{user?.phone}</p>
@@ -102,6 +126,14 @@ export default function AppShell({ children }) {
           </nav>
         )}
 
+        {/* Settings link at the bottom of nav */}
+        <div className="px-3 pb-2">
+          <NavLink to="/profile" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
+            <span className="icon">⚙️</span>
+            Profile & Settings
+          </NavLink>
+        </div>
+
         <UserFooter user={user} logout={logout} />
       </aside>
 
@@ -142,10 +174,14 @@ export default function AppShell({ children }) {
               </span>
             )}
 
-            {/* User avatar */}
-            <div className="w-8 h-8 rounded-full bg-forest-700 flex items-center justify-center text-sm font-bold text-white">
+            {/* User avatar → profile link */}
+            <Link
+              to="/profile"
+              className="w-9 h-9 rounded-full avatar-gradient flex items-center justify-center text-sm font-bold text-white hover:scale-105 transition shadow-sm"
+              title="Profile & Settings"
+            >
               {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-            </div>
+            </Link>
           </div>
         </header>
 

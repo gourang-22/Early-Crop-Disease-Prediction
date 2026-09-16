@@ -17,7 +17,7 @@ class AlertResponse(BaseModel):
     is_read: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 @router.get("/", response_model=List[AlertResponse])
 def get_alerts(farm_id: int, db: Session = Depends(get_db)):

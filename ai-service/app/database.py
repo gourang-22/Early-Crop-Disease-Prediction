@@ -18,6 +18,9 @@ class User(Base):
     name = Column(String, index=True)
     phone = Column(String, unique=True, index=True)
     location = Column(String)
+    city = Column(String, nullable=True)          # Display city name
+    latitude = Column(Float, nullable=True)        # GPS latitude
+    longitude = Column(Float, nullable=True)       # GPS longitude
     language = Column(String, default="en-IN")
     password = Column(String) # Mocked for prototype
     is_officer = Column(Boolean, default=False)
@@ -36,6 +39,8 @@ class Farm(Base):
     sowing_date = Column(String)
     growth_stage = Column(String)
     area = Column(String)
+    latitude = Column(Float, nullable=True)        # Stationary farm GPS latitude
+    longitude = Column(Float, nullable=True)       # Stationary farm GPS longitude
     owner = relationship("User", back_populates="farms")
     cases = relationship("Case", back_populates="farm")
     alerts = relationship("Alert", back_populates="farm")
