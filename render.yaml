@@ -5,6 +5,7 @@ services:
     runtime: python
     rootDir: ai-service
     plan: free
+    pythonVersion: "3.11.7"
     buildCommand: pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
@@ -13,21 +14,3 @@ services:
       - key: DEMO_MODE
         value: "false"
 
-  # ── KrishiScan Frontend (React + Vite SPA) ──
-  - type: web
-    name: krishiscan-frontend
-    runtime: static
-    rootDir: frontend
-    plan: free
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_URL
-        fromService:
-          type: web
-          name: krishiscan-api
-          property: hostURL
